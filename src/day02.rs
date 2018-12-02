@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::collections::HashMap;
 
 fn has_repeated(input: &str, times: usize) -> bool {
@@ -32,31 +33,59 @@ fn answer_1(input: &str) -> i32 {
     twice * thrice
 }
 
-fn hamming(a: &str, b: &str) -> String {
+fn hamming<'a>(a: &str, b: &str) -> String {
     a.chars()
         .zip(b.chars())
-        .filter(|(a, b)| a == b)
-        .map(|(a, _)| a)
+        .filter_map(|(a, b)| if a == b { Some(a) } else { None })
         .collect()
+}
+
+fn pairs<'a>(xs: &'a [&str]) -> Vec<(&'a str, &'a str)> {
+    let mut v = Vec::new();
+
+    for a in xs.iter() {
+        for b in xs.into_iter() {
+            v.push((a.to_owned(), b.to_owned()))
+        }
+    }
+
+    v
+}
+
+fn one_letter_off(a: &str, b: &str) -> Option<String> {
+    if a == b {
+        return None;
+    }
+
+    let h = hamming(a, b);
+    if h.len() + 1 == a.len() {
+        Some(h)
+    } else {
+        None
+    }
 }
 
 #[aoc(day2, part2)]
 fn answer_2(input: &str) -> String {
     let words: Vec<&str> = input.lines().collect();
 
-    for a in words.iter() {
-        for b in words.iter() {
-            if a == b {
-                continue;
-            }
-            let same = hamming(a, b);
-            if same.len() + 1 == a.len() {
-                return same;
-            }
-        }
-    }
+    pairs(&words)
+        .iter()
+        .filter_map(|(a, b)| one_letter_off(a, b))
+        .next()
+        .unwrap()
+}
 
-    String::new()
+#[aoc(day2, part2, rayon)]
+fn answer_2_rayon(input: &str) -> String {
+    let words: Vec<&str> = input.lines().collect();
+
+    pairs(&words)
+        .par_iter()
+        .filter_map(|(a, b)| one_letter_off(a, b))
+        .find_first(|_| true)
+        .unwrap()
+        .to_owned()
 }
 
 #[cfg(test)]
@@ -82,5 +111,11 @@ mod test {
     fn examples_2() {
         let input = "abcde\nfghij\nklmno\npqrst\nfguij\naxcye\nwvxyz";
         assert_eq!(answer_2(input), "fgij");
+    }
+
+    #[test]
+    fn examples_2_rayon() {
+        let input = "abcde\nfghij\nklmno\npqrst\nfguij\naxcye\nwvxyz";
+        assert_eq!(answer_2_rayon(input), "fgij");
     }
 }
