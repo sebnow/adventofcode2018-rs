@@ -32,9 +32,31 @@ fn answer_1(input: &str) -> i32 {
     twice * thrice
 }
 
+fn hamming(a: &str, b: &str) -> String {
+    a.chars()
+        .zip(b.chars())
+        .filter(|(a, b)| a == b)
+        .map(|(a, _)| a)
+        .collect()
+}
+
 #[aoc(day2, part2)]
-fn answer_2(input: &str) -> i32 {
-    0
+fn answer_2(input: &str) -> String {
+    let words: Vec<&str> = input.lines().collect();
+
+    for a in words.iter() {
+        for b in words.iter() {
+            if a == b {
+                continue;
+            }
+            let same = hamming(a, b);
+            if same.len() + 1 == a.len() {
+                return same;
+            }
+        }
+    }
+
+    String::new()
 }
 
 #[cfg(test)]
@@ -57,5 +79,8 @@ mod test {
     }
 
     #[test]
-    fn examples_2() {}
+    fn examples_2() {
+        let input = "abcde\nfghij\nklmno\npqrst\nfguij\naxcye\nwvxyz";
+        assert_eq!(answer_2(input), "fgij");
+    }
 }
