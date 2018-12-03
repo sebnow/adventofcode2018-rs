@@ -64,8 +64,7 @@ pub fn input_generator(input: &str) -> Vec<Claim> {
         }).collect()
 }
 
-#[aoc(day3, part1)]
-fn answer_1(claims: &[Claim]) -> usize {
+fn intersections(claims: &[Claim]) -> HashSet<(u32, u32)> {
     let mut squares = HashSet::new();
 
     pairs(claims)
@@ -84,7 +83,34 @@ fn answer_1(claims: &[Claim]) -> usize {
             }
         });
 
-    squares.len()
+    squares
+}
+
+#[aoc(day3, part1)]
+fn answer_1(claims: &[Claim]) -> usize {
+    intersections(claims).len()
+}
+
+#[aoc(day3, part2)]
+fn answer_2(claims: &[Claim]) -> u32 {
+    let squares = intersections(claims);
+
+    let ids = claims
+        .iter()
+        .filter(|c| {
+            for x in c.rect.left..=c.rect.right {
+                for y in c.rect.top..=c.rect.bottom {
+                    if squares.contains(&(x, y)) {
+                        return false;
+                    }
+                }
+            }
+
+            true
+        }).map(|c| c.id)
+        .collect::<Vec<u32>>();
+
+    ids[0]
 }
 
 fn pairs<'a>(xs: &'a [Claim]) -> Vec<(&'a Claim, &'a Claim)> {
@@ -164,5 +190,11 @@ mod test {
 
         let input = "#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 4,4: 2x2\n";
         assert_eq!(answer_1(&input_generator(input)), 6);
+    }
+
+    #[test]
+    fn examples_2() {
+        let input = "#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2\n";
+        assert_eq!(answer_2(&input_generator(input)), 3);
     }
 }
