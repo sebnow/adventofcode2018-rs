@@ -10,3 +10,4 @@ bench = false
 aoc-runner = "0.1.0"
 aoc-runner-derive = "0.1.0"
 rayon = "1.0"
+regex = "1"
