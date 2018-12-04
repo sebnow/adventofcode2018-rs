@@ -108,6 +108,63 @@ fn answer_1(events: &[Event]) -> usize {
     sleepy_id as usize * minute
 }
 
+#[aoc(day4, part2)]
+fn answer_2(events: &[Event]) -> u32 {
+    let mut guard_sleep: HashMap<u32, u32> = HashMap::with_capacity(events.len());
+    let mut guard_minute: HashMap<u32, Vec<u32>> = HashMap::new();
+    let mut current_id = 0;
+    let mut last_event = &events[0];
+
+    for ev in events {
+        match ev.kind {
+            EventKind::ShiftChange { id } => {
+                current_id = id;
+                guard_sleep.entry(current_id).or_insert(0);
+            }
+
+            EventKind::WakeUp => {
+                let duration = guard_sleep.get_mut(&current_id).unwrap();
+                match last_event.kind {
+                    EventKind::FallAsleep => {
+                        for m in last_event.timestamp.minute()..ev.timestamp.minute() {
+                            let minutes = guard_minute.entry(current_id).or_insert_with(|| {
+                                let mut v = Vec::with_capacity(60);
+                                for _ in 0..60 {
+                                    v.push(0);
+                                }
+                                v
+                            });
+
+                            minutes[m as usize] += 1;
+                        }
+                        let minutes = ev.timestamp - last_event.timestamp;
+                        *duration += minutes.num_minutes() as u32;
+                    }
+                    _ => panic!("Woke up without falling asleep"),
+                }
+            }
+
+            EventKind::FallAsleep => last_event = ev,
+        }
+        last_event = ev;
+    }
+
+    let mut frequent_id = 0;
+    let mut frequent_minute = 0;
+    let mut most_asleep = 0;
+    for (id, minutes) in guard_minute {
+        for (m, &amount) in minutes.iter().enumerate() {
+            if amount > most_asleep {
+                frequent_id = id;
+                frequent_minute = m;
+                most_asleep = amount;
+            }
+        }
+    }
+
+    frequent_id * frequent_minute as u32
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -134,5 +191,29 @@ mod test {
 [1518-11-05 00:55] wakes up\
 ";
         assert_eq!(answer_1(&input_generator(input)), 240);
+    }
+
+    #[test]
+    fn examples_2() {
+        let input = "\
+[1518-11-01 00:00] Guard #10 begins shift
+[1518-11-01 00:05] falls asleep
+[1518-11-01 00:25] wakes up
+[1518-11-01 00:30] falls asleep
+[1518-11-01 00:55] wakes up
+[1518-11-01 23:58] Guard #99 begins shift
+[1518-11-02 00:40] falls asleep
+[1518-11-02 00:50] wakes up
+[1518-11-03 00:05] Guard #10 begins shift
+[1518-11-03 00:24] falls asleep
+[1518-11-03 00:29] wakes up
+[1518-11-04 00:02] Guard #99 begins shift
+[1518-11-04 00:36] falls asleep
+[1518-11-04 00:46] wakes up
+[1518-11-05 00:03] Guard #99 begins shift
+[1518-11-05 00:45] falls asleep
+[1518-11-05 00:55] wakes up\
+";
+        assert_eq!(answer_2(&input_generator(input)), 4455);
     }
 }
