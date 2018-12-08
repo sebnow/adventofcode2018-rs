@@ -84,13 +84,12 @@ fn answer_1(events: &[Event]) -> usize {
                     _ => panic!("Woke up without falling asleep"),
                 }
             }
-
-            EventKind::FallAsleep => last_event = ev,
+            _ => {}
         }
         last_event = ev;
     }
 
-    let (sleepy_id, total_minutes) =
+    let (sleepy_id, _total_minutes) =
         guard_sleep
             .iter()
             .fold((0, 0), |(c_id, c_asleep), (&id, &asleep)| {
@@ -144,7 +143,7 @@ fn answer_2(events: &[Event]) -> u32 {
                 }
             }
 
-            EventKind::FallAsleep => last_event = ev,
+            _ => {}
         }
         last_event = ev;
     }
