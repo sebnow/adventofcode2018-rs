@@ -6,6 +6,23 @@ pub struct Node {
     metadata: Vec<usize>,
 }
 
+impl Node {
+    pub fn sum(&self) -> usize {
+        self.metadata.iter().sum()
+    }
+
+    pub fn value(&self) -> usize {
+        if self.children.is_empty() {
+            self.sum()
+        } else {
+            self.metadata
+                .iter()
+                .flat_map(|i| self.children.get(i - 1).map(|n| n.value()))
+                .sum()
+        }
+    }
+}
+
 impl AsRef<Node> for Node {
     fn as_ref(&self) -> &Node {
         self
@@ -39,10 +56,15 @@ fn answer_1(input: &Node) -> usize {
 
     while let Some(n) = q.pop_front() {
         q.extend(n.children.iter());
-        sum += n.metadata.iter().sum::<usize>();
+        sum += n.sum();
     }
 
     sum
+}
+
+#[aoc(day8, part2)]
+fn answer_2(input: &Node) -> usize {
+    input.value()
 }
 
 #[cfg(test)]
@@ -53,5 +75,10 @@ mod test {
     #[test]
     fn examples_1() {
         assert_eq!(138, answer_1(&input_generator(TEST_INPUT)));
+    }
+
+    #[test]
+    fn examples_2() {
+        assert_eq!(66, answer_2(&input_generator(TEST_INPUT)));
     }
 }
