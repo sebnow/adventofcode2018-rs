@@ -1,6 +1,10 @@
 use point::Point;
 use std::collections::HashMap;
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static MAX_PROXIMITY: AtomicUsize = AtomicUsize::new(10000);
+
 type Grid<'a> = HashMap<Point, (&'a Point, u64)>;
 
 #[aoc_generator(day6)]
@@ -39,6 +43,27 @@ fn answer_1(input: &[Point]) -> usize {
         .map(|p| grid.iter().filter(|(_, (x, _))| p == *x).count())
         .max()
         .unwrap()
+}
+
+#[aoc(day6, part2)]
+fn answer_2(input: &[Point]) -> usize {
+    let boundary = bounds(input);
+    let mut area: usize = 0;
+    let max_proximity = MAX_PROXIMITY.load(Ordering::SeqCst);
+
+    for x in 0..=boundary.1.x() {
+        for y in 0..=boundary.1.y() {
+            let sum = input
+                .iter()
+                .map(|i| i.manhattan_distance(&Point::new(x, y)))
+                .sum::<u64>() as usize;
+            if sum < max_proximity {
+                area += 1
+            }
+        }
+    }
+
+    area
 }
 
 fn populate_grid<'a>(points: &'a [Point], boundary: &(Point, Point)) -> Grid<'a> {
@@ -100,20 +125,22 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn examples_1() {
-        assert_eq!(
-            answer_1(&input_generator(
-                "\
+    const TEST_INPUT: &'static str = "\
 1, 1
 1, 6
 8, 3
 3, 4
 5, 5
-8, 9"
-            )),
-            17
-        );
+8, 9";
+
+    #[test]
+    fn examples_1() {
+        assert_eq!(answer_1(&input_generator(TEST_INPUT)), 17);
+    }
+
+    #[test]
+    fn examples_2() {
+        MAX_PROXIMITY.store(32, Ordering::SeqCst);
+        assert_eq!(answer_2(&input_generator(TEST_INPUT)), 16);
     }
 }
