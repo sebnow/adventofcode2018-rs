@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 #[derive(Debug)]
 pub struct Input {
     players: usize,
@@ -11,17 +13,18 @@ impl AsRef<Input> for Input {
 }
 
 pub struct Circle {
-    current: usize,
-    marble: i64,
-    marbles: Vec<usize>,
+    marble: usize,
+    marbles: VecDeque<usize>,
 }
 
 impl Circle {
     fn new() -> Self {
+        let mut marbles = VecDeque::new();
+        marbles.push_back(0);
+
         Circle {
-            current: 0,
             marble: 0,
-            marbles: vec![0],
+            marbles: marbles,
         }
     }
 
@@ -29,40 +32,19 @@ impl Circle {
         self.marble += 1;
 
         if self.marble % 23 == 0 {
-            self.current = self.counter_clockwise(7);
-            Some(self.marble as usize + self.marbles.remove(self.current))
-        } else {
-            let i = self.clockwise(2);
-            if i == 0 {
-                self.marbles.push(self.marble as usize);
-                self.current = self.marbles.len() - 1;
-            } else {
-                self.marbles.insert(i, self.marble as usize);
-                self.current = i;
+            for _ in 0..7 {
+                let m = self.marbles.pop_back().unwrap();
+                self.marbles.push_front(m);
             }
-
+            Some(self.marble + self.marbles.pop_front().unwrap())
+        } else {
+            for _ in 0..2 {
+                let m = self.marbles.pop_front().unwrap();
+                self.marbles.push_back(m);
+            }
+            self.marbles.push_front(self.marble);
             None
         }
-    }
-
-    fn clockwise(&self, n: usize) -> usize {
-        cycle_index(self.marbles.len(), self.current as i64 + n as i64)
-    }
-
-    fn counter_clockwise(&self, n: usize) -> usize {
-        cycle_index(self.marbles.len(), self.current as i64 - n as i64)
-    }
-}
-
-fn cycle_index(len: usize, i: i64) -> usize {
-    match len {
-        0 => 0,
-        1 => 0,
-        _ => if i >= 0 {
-            i as usize % len
-        } else {
-            len - (i.abs() as usize % len)
-        },
     }
 }
 
@@ -76,12 +58,11 @@ pub fn input_generator(input: &str) -> Input {
     }
 }
 
-#[aoc(day9, part1)]
-fn answer_1(input: &Input) -> usize {
+fn game(input: &Input, multiplier: usize) -> usize {
     let mut players: Vec<usize> = (0..input.players).map(|_| 0).collect();
     let mut circle = Circle::new();
 
-    for (_, player) in (1..=input.last_marble_value).zip((0..players.len()).cycle()) {
+    for (_, player) in (1..=input.last_marble_value * multiplier).zip((0..players.len()).cycle()) {
         if let Some(value) = circle.place() {
             players[player] += value;
         }
@@ -90,90 +71,19 @@ fn answer_1(input: &Input) -> usize {
     *players.iter().max().unwrap()
 }
 
+#[aoc(day9, part1)]
+fn answer_1(input: &Input) -> usize {
+    game(input, 1)
+}
+
+#[aoc(day9, part2)]
+fn answer_2(input: &Input) -> usize {
+    game(input, 100)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn place() {
-        let mut circle = Circle::new();
-        circle.place();
-        assert_eq!(vec![0, 1], circle.marbles);
-        assert_eq!(1, circle.current);
-        circle.place();
-        assert_eq!(vec![0, 2, 1], circle.marbles);
-        assert_eq!(1, circle.current);
-        circle.place();
-        assert_eq!(vec![0, 2, 1, 3], circle.marbles);
-        assert_eq!(3, circle.current);
-        circle.place();
-        assert_eq!(vec![0, 4, 2, 1, 3], circle.marbles);
-        assert_eq!(1, circle.current);
-        circle.place();
-        assert_eq!(vec![0, 4, 2, 5, 1, 3], circle.marbles);
-        assert_eq!(3, circle.current);
-        circle.place();
-        assert_eq!(vec![0, 4, 2, 5, 1, 6, 3], circle.marbles);
-        assert_eq!(5, circle.current);
-        circle.place();
-        assert_eq!(vec![0, 4, 2, 5, 1, 6, 3, 7], circle.marbles);
-        assert_eq!(7, circle.current);
-        circle.place();
-        assert_eq!(vec![0, 8, 4, 2, 5, 1, 6, 3, 7], circle.marbles);
-        assert_eq!(1, circle.current);
-
-        for _ in 9..23 {
-            circle.place();
-        }
-        assert_eq!(
-            vec![0, 16, 8, 17, 4, 18, 9, 19, 2, 20, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7, 15],
-            circle.marbles
-        );
-        assert_eq!(13, circle.current);
-        circle.place();
-        assert_eq!(
-            vec![0, 16, 8, 17, 4, 18, 19, 2, 20, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7, 15],
-            circle.marbles
-        );
-        assert_eq!(6, circle.current);
-
-        circle.place();
-        assert_eq!(
-            vec![0, 16, 8, 17, 4, 18, 19, 2, 24, 20, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7, 15],
-            circle.marbles
-        );
-        assert_eq!(8, circle.current);
-
-        circle.place();
-        assert_eq!(
-            vec![
-                0, 16, 8, 17, 4, 18, 19, 2, 24, 20, 25, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7,
-                15
-            ],
-            circle.marbles
-        );
-        assert_eq!(10, circle.current);
-        assert_eq!(25, circle.marble);
-    }
-
-    #[test]
-    fn test_cycle_index() {
-        assert_eq!(0, cycle_index(0, 1));
-        assert_eq!(0, cycle_index(0, 2));
-        assert_eq!(0, cycle_index(0, -1));
-
-        assert_eq!(0, cycle_index(1, 1));
-        assert_eq!(0, cycle_index(1, 2));
-        assert_eq!(0, cycle_index(1, -1));
-
-        assert_eq!(1, cycle_index(2, 1));
-        assert_eq!(0, cycle_index(2, 2));
-        assert_eq!(1, cycle_index(2, -1));
-
-        assert_eq!(1, cycle_index(3, 1));
-        assert_eq!(1, cycle_index(3, 4));
-        assert_eq!(2, cycle_index(3, -1));
-    }
 
     #[test]
     fn examples_p1_1() {
