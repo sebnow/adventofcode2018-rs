@@ -30,7 +30,7 @@ impl Circle {
 
         if self.marble % 23 == 0 {
             self.current = self.counter_clockwise(7);
-            Some(23 + self.marbles.remove(self.current))
+            Some(self.marble as usize + self.marbles.remove(self.current))
         } else {
             let i = self.clockwise(2);
             if i == 0 {
