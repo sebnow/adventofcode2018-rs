@@ -1,3 +1,5 @@
+use std::cmp::{max, min};
+
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Default)]
 pub struct Coord(i64, i64, i64);
 
@@ -20,6 +22,22 @@ impl Coord {
 
     pub fn z(&self) -> i64 {
         self.2
+    }
+
+    pub fn min(&self, b: &Self) -> Self {
+        Coord::new(
+            min(self.x(), b.x()),
+            min(self.y(), b.y()),
+            min(self.z(), b.z()),
+        )
+    }
+
+    pub fn max(&self, b: &Self) -> Self {
+        Coord::new(
+            max(self.x(), b.x()),
+            max(self.y(), b.y()),
+            max(self.z(), b.z()),
+        )
     }
 }
 

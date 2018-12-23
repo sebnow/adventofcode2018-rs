@@ -8,6 +8,12 @@ pub struct Nanobot {
     radius: u64,
 }
 
+impl Nanobot {
+    fn in_range(&self, c: &Coord) -> bool {
+        self.pos.manhattan_distance(c) <= self.radius
+    }
+}
+
 impl AsRef<Nanobot> for Nanobot {
     fn as_ref(&self) -> &Self {
         self
@@ -56,25 +62,25 @@ fn answer_1(input: &[Nanobot]) -> usize {
         .max_by(|&a, &b| a.radius.cmp(&b.radius))
         .unwrap();
 
-    input
-        .iter()
-        .filter(|n| strongest.pos.manhattan_distance(&n.pos) <= strongest.radius)
-        .count()
+    input.iter().filter(|n| n.in_range(&strongest.pos)).count()
+}
+
+fn find_bounds<'a, I: Iterator<Item = &'a Coord>>(coords: I) -> (Coord, Coord) {
+    coords.fold((Coord::default(), Coord::default()), |(min, max), coord| {
+        (min.min(&coord), max.max(&coord))
+    })
+}
+
+#[aoc(day23, part2)]
+fn answer_2(input: &[Nanobot]) -> u64 {
+    let (min, max) = find_bounds(input.iter().map(|n| &n.pos));
+
+    0
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    const TEST_INPUT: &'static str = "\
-pos=<0,0,0>, r=4
-pos=<1,0,0>, r=1
-pos=<4,0,0>, r=3
-pos=<0,2,0>, r=1
-pos=<0,5,0>, r=3
-pos=<0,0,3>, r=1
-pos=<1,1,1>, r=1
-pos=<1,1,2>, r=1
-pos=<1,3,1>, r=1";
 
     #[test]
     fn test_nanobot_parser() {
@@ -89,6 +95,36 @@ pos=<1,3,1>, r=1";
 
     #[test]
     fn examples_1() {
-        assert_eq!(7, answer_1(&input_generator(TEST_INPUT)));
+        assert_eq!(
+            7,
+            answer_1(&input_generator(
+                "\
+pos=<0,0,0>, r=4
+pos=<1,0,0>, r=1
+pos=<4,0,0>, r=3
+pos=<0,2,0>, r=1
+pos=<0,5,0>, r=3
+pos=<0,0,3>, r=1
+pos=<1,1,1>, r=1
+pos=<1,1,2>, r=1
+pos=<1,3,1>, r=1"
+            ))
+        );
+    }
+
+    #[test]
+    fn examples_2() {
+        assert_eq!(
+            36,
+            answer_2(&input_generator(
+                "\
+pos=<10,12,12>, r=2
+pos=<12,14,12>, r=2
+pos=<16,12,12>, r=4
+pos=<14,14,14>, r=6
+pos=<50,50,50>, r=200
+pos=<10,10,10>, r=5"
+            ))
+        );
     }
 }
