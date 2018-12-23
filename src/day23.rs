@@ -1,8 +1,6 @@
+use coord::Coord;
 use failure::{format_err, Error};
 use regex::Regex;
-
-#[derive(PartialEq, Debug)]
-pub struct Coord(i64, i64, i64);
 
 #[derive(PartialEq, Debug)]
 pub struct Nanobot {
@@ -27,7 +25,7 @@ impl std::str::FromStr for Nanobot {
         let c = re.captures(&s).ok_or(format_err!("error parsing {}", s))?;
 
         Ok(Nanobot {
-            pos: Coord(c[1].parse()?, c[2].parse()?, c[3].parse()?),
+            pos: Coord::new(c[1].parse()?, c[2].parse()?, c[3].parse()?),
             radius: c[4].parse()?,
         })
     }
@@ -38,7 +36,10 @@ impl std::fmt::Display for Nanobot {
         write!(
             f,
             "pos=<{},{},{}>, r={}",
-            self.pos.0, self.pos.1, self.pos.2, self.radius
+            self.pos.x(),
+            self.pos.y(),
+            self.pos.z(),
+            self.radius
         )
     }
 }
@@ -49,8 +50,16 @@ pub fn input_generator(input: &str) -> Vec<Nanobot> {
 }
 
 #[aoc(day23, part1)]
-fn answer_1(input: &[Nanobot]) -> i32 {
-    0
+fn answer_1(input: &[Nanobot]) -> usize {
+    let strongest = input
+        .iter()
+        .max_by(|&a, &b| a.radius.cmp(&b.radius))
+        .unwrap();
+
+    input
+        .iter()
+        .filter(|n| strongest.pos.manhattan_distance(&n.pos) <= strongest.radius)
+        .count()
 }
 
 #[cfg(test)]
@@ -71,7 +80,7 @@ pos=<1,3,1>, r=1";
     fn test_nanobot_parser() {
         assert_eq!(
             Nanobot {
-                pos: Coord(1, 2, 3),
+                pos: Coord::new(1, 2, 3),
                 radius: 4
             },
             "pos=<1,2,3>, r=4".parse::<Nanobot>().unwrap(),

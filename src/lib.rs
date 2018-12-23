@@ -8,9 +8,9 @@ extern crate lazy_static;
 #[macro_use]
 extern crate aoc_runner_derive;
 
-#[macro_use]
 extern crate failure;
 
+pub mod coord;
 pub mod point;
 
 pub mod day01;
