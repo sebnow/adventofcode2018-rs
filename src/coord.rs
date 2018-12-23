@@ -39,6 +39,16 @@ impl Coord {
             max(self.z(), b.z()),
         )
     }
+
+    pub fn abs(&self) -> Coord {
+        Coord::new(self.x().abs(), self.y().abs(), self.z().abs())
+    }
+}
+
+impl std::fmt::Display for Coord {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "({}, {}, {})", self.x(), self.y(), self.z(),)
+    }
 }
 
 #[cfg(test)]

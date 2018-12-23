@@ -37,19 +37,6 @@ impl std::str::FromStr for Nanobot {
     }
 }
 
-impl std::fmt::Display for Nanobot {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "pos=<{},{},{}>, r={}",
-            self.pos.x(),
-            self.pos.y(),
-            self.pos.z(),
-            self.radius
-        )
-    }
-}
-
 #[aoc_generator(day23)]
 pub fn input_generator(input: &str) -> Vec<Nanobot> {
     input.lines().map(|l| l.parse().unwrap()).collect()
@@ -62,7 +49,7 @@ fn answer_1(input: &[Nanobot]) -> usize {
         .max_by(|&a, &b| a.radius.cmp(&b.radius))
         .unwrap();
 
-    input.iter().filter(|n| n.in_range(&strongest.pos)).count()
+    input.iter().filter(|n| strongest.in_range(&n.pos)).count()
 }
 
 fn find_bounds<'a, I: Iterator<Item = &'a Coord>>(coords: I) -> (Coord, Coord) {
@@ -72,10 +59,50 @@ fn find_bounds<'a, I: Iterator<Item = &'a Coord>>(coords: I) -> (Coord, Coord) {
 }
 
 #[aoc(day23, part2)]
-fn answer_2(input: &[Nanobot]) -> u64 {
-    let (min, max) = find_bounds(input.iter().map(|n| &n.pos));
+fn answer_2(bots: &[Nanobot]) -> u64 {
+    let multiplier = 2;
+    let origin = Coord::new(0, 0, 0);
+    let (mut min, mut max) = find_bounds(bots.iter().map(|n| &n.pos));
+    let mut range = 1;
 
-    0
+    while range < max.x() - min.x() {
+        range *= multiplier;
+    }
+
+    loop {
+        let mut max_neighbours = 0;
+        let mut best = origin.clone();
+
+        for x in (min.x()..=max.x()).step_by(range as usize) {
+            for y in (min.y()..=max.y()).step_by(range as usize) {
+                for z in (min.z()..=max.z()).step_by(range as usize) {
+                    let c = Coord::new(x, y, z);
+                    let neighbours = bots
+                        .iter()
+                        .filter(|b| {
+                            (b.pos.manhattan_distance(&c) as i64 - b.radius as i64) / range <= 0
+                        })
+                        .count();
+                    if neighbours > max_neighbours {
+                        max_neighbours = neighbours;
+                        best = c
+                    } else if neighbours == max_neighbours {
+                        if origin.manhattan_distance(&c) < origin.manhattan_distance(&best) {
+                            best = c
+                        }
+                    }
+                }
+            }
+        }
+
+        if range == 1 {
+            return origin.manhattan_distance(&best);
+        }
+
+        min = Coord::new(best.x() - range, best.y() - range, best.z() - range);
+        max = Coord::new(best.x() + range, best.y() + range, best.z() + range);
+        range /= multiplier;
+    }
 }
 
 #[cfg(test)]
